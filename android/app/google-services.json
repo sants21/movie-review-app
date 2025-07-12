@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "698488989736",
+    "project_id": "movie-review-app-5e291",
+    "storage_bucket": "movie-review-app-5e291.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:698488989736:android:55ebde592ed8863949ad1d",
+        "android_client_info": {
+          "package_name": "com.sant.movie_review_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD32ei4IUlkkTb-vg9_opv02DcPVjWpdNg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

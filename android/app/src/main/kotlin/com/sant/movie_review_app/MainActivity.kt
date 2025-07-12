@@ -1,4 +1,4 @@
-package com.example.movie_review_app
+package com.sant.movie_review_app
 
 import io.flutter.embedding.android.FlutterActivity
 
