@@ -91,9 +91,9 @@ class _HomeScreenState extends State<HomeScreen> with AutomaticKeepAliveClientMi
               }
               return SliverList(
                 delegate: SliverChildListDelegate([
-                  _buildMovieSection('🎯 Popular', popularMovies),
-                  _buildMovieSection('⏳ Now Playing', nowPlayingMovies),
-                  _buildMovieSection('📈 Top Rated', topRatedMovies),
+                  _buildMovieSection('🎯 Popular', popularMovies, 'popular'),
+                  _buildMovieSection('⏳ Now Playing', nowPlayingMovies, 'now_playing'),
+                  _buildMovieSection('📈 Top Rated', topRatedMovies, 'top_rated'),
                   const SizedBox(height: 20),
                 ]),
               );
@@ -104,7 +104,7 @@ class _HomeScreenState extends State<HomeScreen> with AutomaticKeepAliveClientMi
     );
   }
 
-  Widget _buildMovieSection(String title, List<dynamic> movies) {
+  Widget _buildMovieSection(String title, List<dynamic> movies, String section) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -131,7 +131,11 @@ class _HomeScreenState extends State<HomeScreen> with AutomaticKeepAliveClientMi
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => MovieDetailsScreen(movieId: movie['id'], posterUrl: posterUrl),
+                      builder: (context) => MovieDetailsScreen(
+                        movieId: movie['id'], 
+                        posterUrl: posterUrl,
+                        heroTag: 'poster-${movie['id']}-$section',
+                      ),
                     ),
                   );
                 },
@@ -150,7 +154,7 @@ class _HomeScreenState extends State<HomeScreen> with AutomaticKeepAliveClientMi
                         Expanded(
                           flex: 4,
                           child: Hero(
-                            tag: 'poster-${movie['id']}',
+                            tag: 'poster-${movie['id']}-$section',
                             child: Image.network(
                               posterUrl,
                               fit: BoxFit.cover,

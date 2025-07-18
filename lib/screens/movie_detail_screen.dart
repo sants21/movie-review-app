@@ -4,8 +4,9 @@ import '../services/movie_service.dart';
 class MovieDetailsScreen extends StatefulWidget {
   final int movieId;
   final String posterUrl;
+  final String heroTag;
 
-  const MovieDetailsScreen({super.key, required this.movieId, required this.posterUrl});
+  const MovieDetailsScreen({super.key, required this.movieId, required this.posterUrl, required this.heroTag});
 
   @override
   State<MovieDetailsScreen> createState() => _MovieDetailsScreenState();
@@ -39,7 +40,7 @@ class _MovieDetailsScreenState extends State<MovieDetailsScreen> {
   }
   Widget get _heroPoster => Center(
     child: Hero(
-      tag: 'poster-${widget.movieId}',
+      tag: widget.heroTag,
       child: Container(
         height: 400,
         decoration: BoxDecoration(
