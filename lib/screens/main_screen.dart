@@ -14,9 +14,9 @@ class _MainScreenState extends State<MainScreen> {
   int _selectedIndex = 0;
 
   final List<Widget> _pages = [
-    const HomeScreen(),
-    const SearchScreen(),
-    const MeScreen(),
+    const HomeScreen(key: PageStorageKey('home')),
+    const SearchScreen(key: PageStorageKey('search')),
+    const MeScreen(key: PageStorageKey('me')),
   ];
 
   void _onTap(int index) {
@@ -26,7 +26,10 @@ class _MainScreenState extends State<MainScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: _pages[_selectedIndex],
+      body: IndexedStack(
+        index: _selectedIndex,
+        children: _pages,
+      ),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _selectedIndex,
         onTap: _onTap,

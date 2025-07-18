@@ -6,25 +6,25 @@ class MovieService {
   final String _baseUrl = 'https://api.themoviedb.org/3';
 
   Future<List<dynamic>> fetchPopularMovies() async {
-    final response = await http.get(Uri.parse('$_baseUrl/movie/popular?api_key=$_apiKey'));
-
-    if (response.statusCode == 200) {
-      final data = json.decode(response.body);
-      return data['results'];
-    } else {
-      throw Exception('Failed to load movies');
-    }
+    return _fetchMovies('$_baseUrl/movie/popular?api_key=$_apiKey');
   }
 
-  Future<List<dynamic>> searchMovies(String query) async {
-    final response = await http.get(Uri.parse(
-        '$_baseUrl/search/movie?api_key=$_apiKey&query=$query'));
+  Future<List<dynamic>> fetchNowPlayingMovies() async {
+    return _fetchMovies('$_baseUrl/movie/now_playing?api_key=$_apiKey');
+  }
+
+  Future<List<dynamic>> fetchTopRatedMovies() async {
+    return _fetchMovies('$_baseUrl/movie/top_rated?api_key=$_apiKey');
+  }
+
+  Future<List<dynamic>> _fetchMovies(String url) async {
+    final response = await http.get(Uri.parse(url));
 
     if (response.statusCode == 200) {
       final data = json.decode(response.body);
       return data['results'];
     } else {
-      throw Exception('Search failed');
+      throw Exception('Failed to fetch movies');
     }
   }
 }
