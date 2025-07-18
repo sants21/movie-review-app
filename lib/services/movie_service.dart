@@ -20,7 +20,6 @@ class MovieService {
   Future<Map<String, dynamic>> fetchMovieDetails(int movieId) async {
     final url = '$_baseUrl/movie/$movieId?api_key=$_apiKey';
     final response = await http.get(Uri.parse(url));
-    print('Fetching movie details from: $url');
 
     if (response.statusCode == 200) {
       return json.decode(response.body);
