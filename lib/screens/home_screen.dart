@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/movie_service.dart';
+import 'movie_detail_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -74,9 +75,21 @@ class _HomeScreenState extends State<HomeScreen> with AutomaticKeepAliveClientMi
             itemBuilder: (context, index) {
               final movie = movies[index];
               final posterUrl = 'https://image.tmdb.org/t/p/w500${movie['poster_path']}';
+              Hero(
+                tag: 'poster-${movie['id']}',
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: Image.network(posterUrl, fit: BoxFit.cover),
+                ),
+              );
               return GestureDetector(
                 onTap: () {
-                  // TODO: Navigate to movie details screen
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => MovieDetailsScreen(movieId: movie['id'], posterUrl: posterUrl),
+                    ),
+                  );
                 },
                 child: Container(
                   width: 130,
