@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../services/movie_service.dart';
 import 'movie_detail_screen.dart';
 
@@ -53,6 +54,15 @@ class _HomeScreenState extends State<HomeScreen> with AutomaticKeepAliveClientMi
               titlePadding: const EdgeInsets.only(left: 20, bottom: 16),
             ),
             backgroundColor: Theme.of(context).colorScheme.surface,
+            actions: [
+              IconButton(
+                onPressed: () async {
+                  await FirebaseAuth.instance.signOut();
+                },
+                icon: const Icon(Icons.logout),
+                tooltip: 'Logout',
+              ),
+            ],
           ),
           FutureBuilder<void>(
             future: _loadAllMovies,
@@ -161,7 +171,7 @@ class _HomeScreenState extends State<HomeScreen> with AutomaticKeepAliveClientMi
                               loadingBuilder: (context, child, loadingProgress) {
                                 if (loadingProgress == null) return child;
                                 return Container(
-                                  color: Theme.of(context).colorScheme.surfaceVariant,
+                                  color: Theme.of(context).colorScheme.onSurfaceVariant,
                                   child: const Center(
                                     child: CircularProgressIndicator(),
                                   ),
@@ -169,7 +179,7 @@ class _HomeScreenState extends State<HomeScreen> with AutomaticKeepAliveClientMi
                               },
                               errorBuilder: (context, error, stackTrace) {
                                 return Container(
-                                  color: Theme.of(context).colorScheme.surfaceVariant,
+                                  color: Theme.of(context).colorScheme.onSurfaceVariant,
                                   child: Icon(
                                     Icons.movie,
                                     size: 48,
