@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:movie_review_app/screens/movie_detail_screen.dart';
 import '../services/movie_service.dart';
+import 'movie_detail_screen.dart';
 
 class MovieSearchPage extends StatefulWidget {
   const MovieSearchPage({super.key});

@@ -1,10 +1,8 @@
+import 'package:MovieHub/screens/main_screen.dart';
+import 'package:MovieHub/screens/onboarding/onboarding_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:movie_review_app/screens/main_screen.dart';
-import 'package:movie_review_app/screens/onboarding/onboarding_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'screens/auth/login_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
