@@ -103,7 +103,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         borderRadius: BorderRadius.circular(12),
                       ),
                       filled: true,
-                      fillColor: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.3),
+                      fillColor: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.3),
                     ),
                     validator: (value) {
                       if (value == null || value.isEmpty) return 'Please enter your email';
@@ -128,7 +128,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         borderRadius: BorderRadius.circular(12),
                       ),
                       filled: true,
-                      fillColor: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.3),
+                      fillColor: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.3),
                     ),
                     validator: (value) {
                       if (value == null || value.isEmpty) return 'Please enter your password';
