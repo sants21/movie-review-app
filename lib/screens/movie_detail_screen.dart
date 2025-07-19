@@ -6,7 +6,12 @@ class MovieDetailsScreen extends StatefulWidget {
   final String posterUrl;
   final String heroTag;
 
-  const MovieDetailsScreen({super.key, required this.movieId, required this.posterUrl, required this.heroTag});
+  const MovieDetailsScreen({
+    super.key,
+    required this.movieId,
+    required this.posterUrl,
+    required this.heroTag,
+  });
 
   @override
   State<MovieDetailsScreen> createState() => _MovieDetailsScreenState();
@@ -19,6 +24,7 @@ class _MovieDetailsScreenState extends State<MovieDetailsScreen> {
   String errorMessage = '';
   List<Map<String, dynamic>>? cast;
   String? certification;
+  List<dynamic>? similar;
 
   @override
   void initState() {
@@ -31,156 +37,39 @@ class _MovieDetailsScreenState extends State<MovieDetailsScreen> {
       final data = await _movieService.fetchMovieDetails(widget.movieId);
       final castData = await _movieService.fetchMovieCast(widget.movieId);
       final cert = await _movieService.fetchMovieCertification(widget.movieId);
+      final similarMovies = await _movieService.fetchSimilarMovies(widget.movieId);
+      if (!mounted) return;
       setState(() {
         movieData = data;
         cast = castData.take(10).toList();
         certification = cert;
+        similar = similarMovies.take(10).toList();
         isLoading = false;
       });
     } catch (e) {
+      if (!mounted) return;
       setState(() {
         errorMessage = e.toString();
         isLoading = false;
       });
     }
   }
-  Widget get _heroPoster => Center(
-    child: Hero(
-      tag: widget.heroTag,
-      child: Container(
-        height: 400,
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(20),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.3),
-              blurRadius: 20,
-              offset: const Offset(0, 10),
-            ),
-          ],
-        ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(20),
-          child: Image.network(
-            widget.posterUrl,
-            fit: BoxFit.cover,
-            loadingBuilder: (context, child, loadingProgress) {
-              if (loadingProgress == null) return child;
-              return Container(
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-                child: const Center(
-                  child: CircularProgressIndicator(),
-                ),
-              );
-            },
-            errorBuilder: (context, error, stackTrace) {
-              return Container(
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-                child: Icon(
-                  Icons.movie,
-                  size: 64,
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
-              );
-            },
-          ),
-        ),
-      ),
-    ),
-  );
-
-  Widget get _posterWithoutHero => Center(
-    child: Container(
-      height: 400,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.3),
-            blurRadius: 20,
-            offset: const Offset(0, 10),
-          ),
-        ],
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(20),
-        child: Image.network(
-          widget.posterUrl,
-          fit: BoxFit.cover,
-          loadingBuilder: (context, child, loadingProgress) {
-            if (loadingProgress == null) return child;
-            return Container(
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
-              child: const Center(
-                child: CircularProgressIndicator(),
-              ),
-            );
-          },
-          errorBuilder: (context, error, stackTrace) {
-            return Container(
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
-              child: Icon(
-                Icons.movie,
-                size: 64,
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-              ),
-            );
-          },
-        ),
-      ),
-    ),
-  );
 
   @override
   Widget build(BuildContext context) {
     if (isLoading || errorMessage.isNotEmpty) {
       return Scaffold(
-        appBar: AppBar(
-          backgroundColor: Colors.transparent,
-          elevation: 0,
-        ),
-        body: Padding(
-          padding: const EdgeInsets.all(20),
-          child: Column(
+        body: Center(
+          child: isLoading
+              ? const CircularProgressIndicator()
+              : Column(
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const SizedBox(height: 40),
-              SizedBox(
-                height: 400,
-                child: _heroPoster,
-              ),
-              const SizedBox(height: 40),
-              if (isLoading)
-                Column(
-                  children: [
-                    const CircularProgressIndicator(),
-                    const SizedBox(height: 16),
-                    Text(
-                      'Loading movie details...',
-                      style: Theme.of(context).textTheme.bodyLarge,
-                    ),
-                  ],
-                )
-              else
-                Column(
-                  children: [
-                    Icon(
-                      Icons.error_outline,
-                      size: 64,
-                      color: Theme.of(context).colorScheme.error,
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      'Error loading movie',
-                      style: Theme.of(context).textTheme.headlineSmall,
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      errorMessage,
-                      style: Theme.of(context).textTheme.bodyMedium,
-                      textAlign: TextAlign.center,
-                    ),
-                  ],
-                ),
+              Icon(Icons.error, color: Theme.of(context).colorScheme.error, size: 64),
+              const SizedBox(height: 16),
+              Text('Error loading movie details', style: Theme.of(context).textTheme.titleMedium),
+              const SizedBox(height: 8),
+              Text(errorMessage, textAlign: TextAlign.center),
             ],
           ),
         ),
@@ -191,31 +80,81 @@ class _MovieDetailsScreenState extends State<MovieDetailsScreen> {
       body: CustomScrollView(
         slivers: [
           SliverAppBar(
-            expandedHeight: 500,
             pinned: true,
-            flexibleSpace: FlexibleSpaceBar(
-              background: Stack(
-                children: [
-                  Container(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [
-                          Theme.of(context).colorScheme.surface.withValues(alpha: 0.8),
-                          Theme.of(context).colorScheme.surface,
-                        ],
-                      ),
-                    ),
-                  ),
-                  Center(
-                    child: Padding(
-                      padding: const EdgeInsets.only(top: 100),
-                      child: _posterWithoutHero,
-                    ),
-                  ),
-                ],
+            expandedHeight: 500,
+            backgroundColor: Theme.of(context).colorScheme.surface,
+            leading: IconButton(
+              icon: const Icon(Icons.arrow_back),
+              onPressed: () => Navigator.pop(context),
+            ),
+            actions: [
+              IconButton(
+                icon: const Icon(Icons.bookmark_add_outlined),
+                tooltip: 'Add to Watchlist',
+                onPressed: () {
+                  // TODO: Watchlist logic
+                },
               ),
+              IconButton(
+                icon: const Icon(Icons.check_circle_outline),
+                tooltip: 'Mark as Watched',
+                onPressed: () {
+                  // TODO: Mark as watched logic
+                },
+              ),
+            ],
+            flexibleSpace: LayoutBuilder(
+              builder: (context, constraints) {
+                final collapsed = constraints.maxHeight <= kToolbarHeight + MediaQuery.of(context).padding.top + 20;
+                return FlexibleSpaceBar(
+                  title: collapsed
+                      ? Text(
+                    movieData?['title'] ?? '',
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                    textAlign: TextAlign.center,
+                  )
+                      : null,
+                  centerTitle: true,
+                  background: Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      Image.network(
+                        widget.posterUrl,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) => Container(
+                          color: Colors.grey,
+                          child: const Icon(Icons.movie, size: 100),
+                        ),
+                      ),
+                      Container(
+                        decoration: const BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            colors: [Colors.transparent, Colors.black87],
+                          ),
+                        ),
+                      ),
+                      Positioned(
+                        bottom: 24,
+                        left: 16,
+                        right: 16,
+                        child: Text(
+                          movieData?['title'] ?? '',
+                          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            shadows: const [
+                              Shadow(offset: Offset(0, 1), blurRadius: 4, color: Colors.black),
+                            ],
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              },
             ),
           ),
           SliverToBoxAdapter(
@@ -224,166 +163,190 @@ class _MovieDetailsScreenState extends State<MovieDetailsScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    movieData!['title'],
-                    style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                        decoration: BoxDecoration(
-                          color: Theme.of(context).colorScheme.secondaryContainer,
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              Icons.calendar_today,
-                              size: 16,
-                              color: Theme.of(context).colorScheme.onSecondaryContainer,
-                            ),
-                            const SizedBox(width: 4),
-                            Text(
-                              movieData!['release_date'] ?? 'Unknown',
-                              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      if (certification != null && certification!.isNotEmpty) ...[
-                        const SizedBox(width: 16),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                          decoration: BoxDecoration(
-                            color: Theme.of(context).colorScheme.primaryContainer,
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: Text(
-                            certification!,
-                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
-                  const SizedBox(height: 20),
-                  if (movieData!['genres'] != null && movieData!['genres'].isNotEmpty)
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Genres',
-                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Wrap(
-                          spacing: 8,
-                          runSpacing: 8,
-                          children: List<Widget>.from(movieData!['genres'].map(
-                            (g) => Chip(
-                              label: Text(g['name']),
-                              backgroundColor: Theme.of(context).colorScheme.tertiaryContainer,
-                              labelStyle: TextStyle(
-                                color: Theme.of(context).colorScheme.onTertiaryContainer,
-                              ),
-                            ),
-                          )),
-                        ),
-                        const SizedBox(height: 24),
-                      ],
-                    ),
-                  Text(
-                    'Overview',
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    movieData!['overview'] ?? 'No overview available',
-                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                      height: 1.6,
-                    ),
-                  ),
-                  const SizedBox(height: 40),
-                  if (cast != null && cast!.isNotEmpty)
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const SizedBox(height: 24),
-                        Text(
-                          'Cast',
-                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        SizedBox(
-                          height: 140,
-                          child: ListView.separated(
-                            scrollDirection: Axis.horizontal,
-                            itemCount: cast!.length,
-                            separatorBuilder: (_, __) => const SizedBox(width: 12),
-                            itemBuilder: (context, index) {
-                              final actor = cast![index];
-                              final profilePath = actor['profile_path'];
-                              final imageUrl = profilePath != null
-                                  ? 'https://image.tmdb.org/t/p/w185$profilePath'
-                                  : null;
-
-                              return Column(
-                                crossAxisAlignment: CrossAxisAlignment.center,
-                                children: [
-                                  ClipRRect(
-                                    borderRadius: BorderRadius.circular(40),
-                                    child: imageUrl != null
-                                        ? Image.network(
-                                      imageUrl,
-                                      width: 70,
-                                      height: 70,
-                                      fit: BoxFit.cover,
-                                    )
-                                        : Container(
-                                      width: 70,
-                                      height: 70,
-                                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                                      child: Icon(Icons.person, size: 30),
-                                    ),
-                                  ),
-                                  const SizedBox(height: 8),
-                                  SizedBox(
-                                    width: 70,
-                                    child: Text(
-                                      actor['name'] ?? '',
-                                      style: Theme.of(context).textTheme.bodySmall,
-                                      overflow: TextOverflow.ellipsis,
-                                      textAlign: TextAlign.center,
-                                    ),
-                                  ),
-                                ],
-                              );
-                            },
-                          ),
-                        ),
-                      ],
-                    ),
+                  _buildInfoSection(),
+                  const SizedBox(height: 24),
+                  _buildOverviewSection(),
+                  const SizedBox(height: 24),
+                  if (cast != null && cast!.isNotEmpty) _buildCastSection(),
+                  const SizedBox(height: 24),
+                  if (similar != null && similar!.isNotEmpty) _buildSimilarMoviesSection(),
                 ],
               ),
             ),
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildInfoSection() {
+    return Row(
+      children: [
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.secondaryContainer,
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Row(
+            children: [
+              const Icon(Icons.calendar_today, size: 16),
+              const SizedBox(width: 4),
+              Text(
+                movieData!['release_date'] ?? 'Unknown',
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.bold),
+              ),
+            ],
+          ),
+        ),
+        if (certification != null && certification!.isNotEmpty) ...[
+          const SizedBox(width: 16),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.primaryContainer,
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Text(
+              certification!,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.bold),
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildOverviewSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Overview', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+        const SizedBox(height: 8),
+        Text(
+          movieData!['overview'] ?? 'No overview available',
+          style: Theme.of(context).textTheme.bodyLarge?.copyWith(height: 1.6),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildCastSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Cast', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+        const SizedBox(height: 12),
+        SizedBox(
+          height: 140,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            itemCount: cast!.length,
+            separatorBuilder: (_, __) => const SizedBox(width: 12),
+            itemBuilder: (context, index) {
+              final actor = cast![index];
+              final profilePath = actor['profile_path'];
+              final imageUrl = profilePath != null
+                  ? 'https://image.tmdb.org/t/p/w185$profilePath'
+                  : null;
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(40),
+                    child: imageUrl != null
+                        ? Image.network(imageUrl, width: 70, height: 70, fit: BoxFit.cover)
+                        : Container(
+                      width: 70,
+                      height: 70,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      child: const Icon(Icons.person, size: 30),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  SizedBox(
+                    width: 70,
+                    child: Text(
+                      actor['name'] ?? '',
+                      style: Theme.of(context).textTheme.bodySmall,
+                      overflow: TextOverflow.ellipsis,
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                ],
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSimilarMoviesSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Similar Movies', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+        const SizedBox(height: 12),
+        SizedBox(
+          height: 220,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            itemCount: similar!.length,
+            separatorBuilder: (_, __) => const SizedBox(width: 12),
+            itemBuilder: (context, index) {
+              final movie = similar![index];
+              final posterPath = movie['poster_path'];
+              final posterUrl = posterPath != null
+                  ? 'https://image.tmdb.org/t/p/w342$posterPath'
+                  : null;
+              return GestureDetector(
+                onTap: () {
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => MovieDetailsScreen(
+                        movieId: movie['id'],
+                        posterUrl: posterUrl ?? '',
+                        heroTag: 'similar-${movie['id']}',
+                      ),
+                    ),
+                  );
+                },
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Hero(
+                      tag: 'similar-${movie['id']}',
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(12),
+                        child: posterUrl != null
+                            ? Image.network(posterUrl, width: 120, height: 180, fit: BoxFit.cover)
+                            : Container(
+                          width: 120,
+                          height: 180,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                          child: const Icon(Icons.movie, size: 40),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    SizedBox(
+                      width: 120,
+                      child: Text(
+                        movie['title'] ?? '',
+                        style: Theme.of(context).textTheme.bodySmall,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+        ),
+      ],
     );
   }
 }

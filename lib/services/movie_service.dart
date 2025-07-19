@@ -57,7 +57,7 @@ class MovieService {
       final results = data['results'];
 
       for (var country in results) {
-        if (country['iso_3166_1'] == 'TH') { 
+        if (country['iso_3166_1'] == 'TH') {
           for (var release in country['release_dates']) {
             final cert = release['certification'];
             if (cert != null && cert.toString().isNotEmpty) {
@@ -69,6 +69,18 @@ class MovieService {
     }
 
     return null;
+  }
+
+  Future<List<dynamic>> fetchSimilarMovies(int movieId) async {
+    final url = '$_baseUrl/movie/$movieId/similar?api_key=$_apiKey';
+    final response = await http.get(Uri.parse(url));
+
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      return data['results'];
+    } else {
+      throw Exception('Failed to load similar movies');
+    }
   }
 
   Future<List<dynamic>> _fetchMovies(String url) async {
