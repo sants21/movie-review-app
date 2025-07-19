@@ -25,6 +25,17 @@ class _LoginScreenState extends State<LoginScreen> {
         email: _emailController.text.trim(),
         password: _passwordController.text,
       );
+      
+      // Navigate back to main app after successful login
+      if (mounted) {
+        Navigator.of(context).pop(); // Go back to previous screen
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Welcome back!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../services/movie_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'auth/login_screen.dart';
 
 class MovieDetailsScreen extends StatefulWidget {
   final int movieId;
@@ -99,9 +100,7 @@ class _MovieDetailsScreenState extends State<MovieDetailsScreen> {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Please log in to add to watchlist')),
-        );
+        _showLoginPrompt('add movies to your watchlist');
       }
       return;
     }
@@ -159,9 +158,7 @@ class _MovieDetailsScreenState extends State<MovieDetailsScreen> {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Please log in to mark as watched')),
-        );
+        _showLoginPrompt('mark movies as watched');
       }
       return;
     }
@@ -234,6 +231,34 @@ class _MovieDetailsScreenState extends State<MovieDetailsScreen> {
         );
       }
     }
+  }
+
+  void _showLoginPrompt(String action) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Login Required'),
+          content: Text('Please log in to $action.'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const LoginScreen()),
+                );
+              },
+              child: const Text('Login'),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override

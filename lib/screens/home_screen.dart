@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import '../services/movie_service.dart';
 import 'movie_detail_screen.dart';
 
@@ -67,15 +66,6 @@ class _HomeScreenState extends State<HomeScreen> with AutomaticKeepAliveClientMi
               titlePadding: const EdgeInsets.only(left: 20, bottom: 16),
             ),
             backgroundColor: Theme.of(context).colorScheme.surface,
-            actions: [
-              IconButton(
-                onPressed: () async {
-                  await FirebaseAuth.instance.signOut();
-                },
-                icon: const Icon(Icons.logout),
-                tooltip: 'Logout',
-              ),
-            ],
           ),
           FutureBuilder<void>(
             future: _loadAllMovies,
