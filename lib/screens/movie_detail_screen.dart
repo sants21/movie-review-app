@@ -17,6 +17,8 @@ class _MovieDetailsScreenState extends State<MovieDetailsScreen> {
   Map<String, dynamic>? movieData;
   bool isLoading = true;
   String errorMessage = '';
+  List<Map<String, dynamic>>? cast;
+  String? certification;
 
   @override
   void initState() {
@@ -27,8 +29,12 @@ class _MovieDetailsScreenState extends State<MovieDetailsScreen> {
   Future<void> _loadMovieDetails() async {
     try {
       final data = await _movieService.fetchMovieDetails(widget.movieId);
+      final castData = await _movieService.fetchMovieCast(widget.movieId);
+      final cert = await _movieService.fetchMovieCertification(widget.movieId);
       setState(() {
         movieData = data;
+        cast = castData.take(10).toList();
+        certification = cert;
         isLoading = false;
       });
     } catch (e) {
@@ -47,7 +53,7 @@ class _MovieDetailsScreenState extends State<MovieDetailsScreen> {
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.3),
+              color: Colors.black.withValues(alpha: 0.3),
               blurRadius: 20,
               offset: const Offset(0, 10),
             ),
@@ -61,7 +67,7 @@ class _MovieDetailsScreenState extends State<MovieDetailsScreen> {
             loadingBuilder: (context, child, loadingProgress) {
               if (loadingProgress == null) return child;
               return Container(
-                color: Theme.of(context).colorScheme.surfaceVariant,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
                 child: const Center(
                   child: CircularProgressIndicator(),
                 ),
@@ -69,7 +75,7 @@ class _MovieDetailsScreenState extends State<MovieDetailsScreen> {
             },
             errorBuilder: (context, error, stackTrace) {
               return Container(
-                color: Theme.of(context).colorScheme.surfaceVariant,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
                 child: Icon(
                   Icons.movie,
                   size: 64,
@@ -90,7 +96,7 @@ class _MovieDetailsScreenState extends State<MovieDetailsScreen> {
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.3),
+            color: Colors.black.withValues(alpha: 0.3),
             blurRadius: 20,
             offset: const Offset(0, 10),
           ),
@@ -104,7 +110,7 @@ class _MovieDetailsScreenState extends State<MovieDetailsScreen> {
           loadingBuilder: (context, child, loadingProgress) {
             if (loadingProgress == null) return child;
             return Container(
-              color: Theme.of(context).colorScheme.surfaceVariant,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
               child: const Center(
                 child: CircularProgressIndicator(),
               ),
@@ -112,7 +118,7 @@ class _MovieDetailsScreenState extends State<MovieDetailsScreen> {
           },
           errorBuilder: (context, error, stackTrace) {
             return Container(
-              color: Theme.of(context).colorScheme.surfaceVariant,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
               child: Icon(
                 Icons.movie,
                 size: 64,
@@ -196,7 +202,7 @@ class _MovieDetailsScreenState extends State<MovieDetailsScreen> {
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,
                         colors: [
-                          Theme.of(context).colorScheme.surface.withOpacity(0.8),
+                          Theme.of(context).colorScheme.surface.withValues(alpha: 0.8),
                           Theme.of(context).colorScheme.surface,
                         ],
                       ),
@@ -230,31 +236,6 @@ class _MovieDetailsScreenState extends State<MovieDetailsScreen> {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                         decoration: BoxDecoration(
-                          color: Theme.of(context).colorScheme.primaryContainer,
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              Icons.star,
-                              size: 16,
-                              color: Colors.amber,
-                            ),
-                            const SizedBox(width: 4),
-                            Text(
-                              '${movieData!['vote_average']?.toStringAsFixed(1) ?? 'N/A'}',
-                              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                        decoration: BoxDecoration(
                           color: Theme.of(context).colorScheme.secondaryContainer,
                           borderRadius: BorderRadius.circular(20),
                         ),
@@ -276,6 +257,22 @@ class _MovieDetailsScreenState extends State<MovieDetailsScreen> {
                           ],
                         ),
                       ),
+                      if (certification != null && certification!.isNotEmpty) ...[
+                        const SizedBox(width: 16),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: Theme.of(context).colorScheme.primaryContainer,
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Text(
+                            certification!,
+                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ],
                     ],
                   ),
                   const SizedBox(height: 20),
@@ -320,6 +317,67 @@ class _MovieDetailsScreenState extends State<MovieDetailsScreen> {
                     ),
                   ),
                   const SizedBox(height: 40),
+                  if (cast != null && cast!.isNotEmpty)
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const SizedBox(height: 24),
+                        Text(
+                          'Cast',
+                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        SizedBox(
+                          height: 140,
+                          child: ListView.separated(
+                            scrollDirection: Axis.horizontal,
+                            itemCount: cast!.length,
+                            separatorBuilder: (_, __) => const SizedBox(width: 12),
+                            itemBuilder: (context, index) {
+                              final actor = cast![index];
+                              final profilePath = actor['profile_path'];
+                              final imageUrl = profilePath != null
+                                  ? 'https://image.tmdb.org/t/p/w185$profilePath'
+                                  : null;
+
+                              return Column(
+                                crossAxisAlignment: CrossAxisAlignment.center,
+                                children: [
+                                  ClipRRect(
+                                    borderRadius: BorderRadius.circular(40),
+                                    child: imageUrl != null
+                                        ? Image.network(
+                                      imageUrl,
+                                      width: 70,
+                                      height: 70,
+                                      fit: BoxFit.cover,
+                                    )
+                                        : Container(
+                                      width: 70,
+                                      height: 70,
+                                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                      child: Icon(Icons.person, size: 30),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  SizedBox(
+                                    width: 70,
+                                    child: Text(
+                                      actor['name'] ?? '',
+                                      style: Theme.of(context).textTheme.bodySmall,
+                                      overflow: TextOverflow.ellipsis,
+                                      textAlign: TextAlign.center,
+                                    ),
+                                  ),
+                                ],
+                              );
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
                 ],
               ),
             ),

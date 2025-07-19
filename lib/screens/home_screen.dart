@@ -17,6 +17,8 @@ class _HomeScreenState extends State<HomeScreen> with AutomaticKeepAliveClientMi
   List<dynamic> popularMovies = [];
   List<dynamic> nowPlayingMovies = [];
   List<dynamic> topRatedMovies = [];
+  List<dynamic> upcomingMovies = [];
+  List<dynamic> trendingMovies = [];
 
   @override
   void initState() {
@@ -28,6 +30,8 @@ class _HomeScreenState extends State<HomeScreen> with AutomaticKeepAliveClientMi
     popularMovies = await _movieService.fetchPopularMovies();
     nowPlayingMovies = await _movieService.fetchNowPlayingMovies();
     topRatedMovies = await _movieService.fetchTopRatedMovies();
+    upcomingMovies = await _movieService.fetchUpcomingMovies();
+    trendingMovies = await _movieService.fetchTrendingWeekly();
   }
 
   @override
@@ -101,8 +105,10 @@ class _HomeScreenState extends State<HomeScreen> with AutomaticKeepAliveClientMi
               }
               return SliverList(
                 delegate: SliverChildListDelegate([
-                  _buildMovieSection('🎯 Popular', popularMovies, 'popular'),
                   _buildMovieSection('⏳ Now Playing', nowPlayingMovies, 'now_playing'),
+                  _buildMovieSection('📅 Upcoming', upcomingMovies, 'upcoming'),
+                  _buildMovieSection('🎯 Popular', popularMovies, 'popular'),
+                  _buildMovieSection('🔥 Trending', trendingMovies, 'trending'),
                   _buildMovieSection('📈 Top Rated', topRatedMovies, 'top_rated'),
                   const SizedBox(height: 20),
                 ]),
