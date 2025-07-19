@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import '../services/movie_service.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class MovieDetailsScreen extends StatefulWidget {
   final int movieId;
@@ -25,11 +27,49 @@ class _MovieDetailsScreenState extends State<MovieDetailsScreen> {
   List<Map<String, dynamic>>? cast;
   String? certification;
   List<dynamic>? similar;
+  bool isInWatchlist = false;
+  bool isWatched = false;
 
   @override
   void initState() {
     super.initState();
     _loadMovieDetails();
+    _checkMovieStatus();
+  }
+
+  Future<void> _checkMovieStatus() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+
+    final userId = user.uid;
+    final movieId = widget.movieId.toString();
+
+    try {
+      // Check watchlist status
+      final watchlistDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(userId)
+          .collection('watchlist')
+          .doc(movieId)
+          .get();
+
+      // Check watched status
+      final watchedDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(userId)
+          .collection('watched')
+          .doc(movieId)
+          .get();
+
+      if (mounted) {
+        setState(() {
+          isInWatchlist = watchlistDoc.exists;
+          isWatched = watchedDoc.exists;
+        });
+      }
+    } catch (e) {
+      print('Error checking movie status: $e');
+    }
   }
 
   Future<void> _loadMovieDetails() async {
@@ -52,6 +92,147 @@ class _MovieDetailsScreenState extends State<MovieDetailsScreen> {
         errorMessage = e.toString();
         isLoading = false;
       });
+    }
+  }
+
+  Future<void> addToWatchlist(Map<String, dynamic> movieData) async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Please log in to add to watchlist')),
+        );
+      }
+      return;
+    }
+
+    try {
+      final userId = user.uid;
+      final movieId = movieData['id'].toString();
+      
+      // Check if movie is already in watchlist
+      final docRef = FirebaseFirestore.instance
+          .collection('users')
+          .doc(userId)
+          .collection('watchlist')
+          .doc(movieId);
+      
+      final docSnapshot = await docRef.get();
+      
+      if (docSnapshot.exists) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Movie already in watchlist')),
+          );
+        }
+        return;
+      }
+
+      // Add movie to watchlist with timestamp
+      await docRef.set({
+        ...movieData,
+        'addedAt': FieldValue.serverTimestamp(),
+        'posterUrl': widget.posterUrl, // Include poster URL for easy display
+      });
+
+      if (mounted) {
+        setState(() {
+          isInWatchlist = true;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Added to watchlist!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error adding to watchlist: $e')),
+        );
+      }
+    }
+  }
+
+  Future<void> markAsWatched(Map<String, dynamic> movieData) async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Please log in to mark as watched')),
+        );
+      }
+      return;
+    }
+
+    try {
+      final userId = user.uid;
+      final movieId = movieData['id'].toString();
+      
+      final docRef = FirebaseFirestore.instance
+          .collection('users')
+          .doc(userId)
+          .collection('watched')
+          .doc(movieId);
+      
+      final docSnapshot = await docRef.get();
+      
+      if (docSnapshot.exists) {
+        // Movie is already watched, so unmark it
+        await docRef.delete();
+        
+        if (mounted) {
+          setState(() {
+            isWatched = false;
+          });
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Unmarked as watched'),
+              backgroundColor: Colors.orange,
+            ),
+          );
+        }
+        return;
+      }
+
+      // Add movie to watched collection with timestamp
+      await docRef.set({
+        ...movieData,
+        'watchedAt': FieldValue.serverTimestamp(),
+        'posterUrl': widget.posterUrl,
+      });
+
+      // Remove from watchlist if it exists
+      final watchlistDocRef = FirebaseFirestore.instance
+          .collection('users')
+          .doc(userId)
+          .collection('watchlist')
+          .doc(movieId);
+      
+      final watchlistDoc = await watchlistDocRef.get();
+      if (watchlistDoc.exists) {
+        await watchlistDocRef.delete();
+      }
+
+      if (mounted) {
+        setState(() {
+          isWatched = true;
+          isInWatchlist = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Marked as watched!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error marking as watched: $e')),
+        );
+      }
     }
   }
 
@@ -89,17 +270,23 @@ class _MovieDetailsScreenState extends State<MovieDetailsScreen> {
             ),
             actions: [
               IconButton(
-                icon: const Icon(Icons.bookmark_add_outlined),
-                tooltip: 'Add to Watchlist',
+                icon: Icon(
+                  isInWatchlist ? Icons.bookmark : Icons.bookmark_add_outlined,
+                  color: isInWatchlist ? Colors.blue : null,
+                ),
+                tooltip: isInWatchlist ? 'In Watchlist' : 'Add to Watchlist',
                 onPressed: () {
-                  // TODO: Watchlist logic
+                  addToWatchlist(movieData!);
                 },
               ),
               IconButton(
-                icon: const Icon(Icons.check_circle_outline),
-                tooltip: 'Mark as Watched',
+                icon: Icon(
+                  isWatched ? Icons.check_circle : Icons.check_circle_outline,
+                  color: isWatched ? Colors.green : null,
+                ),
+                tooltip: isWatched ? 'Watched' : 'Mark as Watched',
                 onPressed: () {
-                  // TODO: Mark as watched logic
+                  markAsWatched(movieData!);
                 },
               ),
             ],
