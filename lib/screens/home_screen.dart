@@ -19,6 +19,15 @@ class _HomeScreenState extends State<HomeScreen> with AutomaticKeepAliveClientMi
   List<dynamic> topRatedMovies = [];
   List<dynamic> upcomingMovies = [];
   List<dynamic> trendingMovies = [];
+  
+  // Track expanded state for each section
+  Map<String, bool> expandedSections = {
+    'now_playing': false,
+    'upcoming': false,
+    'popular': false,
+    'trending': false,
+    'top_rated': false,
+  };
 
   @override
   void initState() {
@@ -121,16 +130,48 @@ class _HomeScreenState extends State<HomeScreen> with AutomaticKeepAliveClientMi
   }
 
   Widget _buildMovieSection(String title, List<dynamic> movies, String section) {
+    final isExpanded = expandedSections[section] ?? false;
+    final displayMovies = isExpanded ? movies : movies.take(10).toList();
+    
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
           padding: const EdgeInsets.fromLTRB(20, 24, 20, 16),
-          child: Text(
-            title,
-            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-              fontWeight: FontWeight.bold,
-            ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                title,
+                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              if (movies.length > 10)
+                TextButton(
+                  onPressed: () {
+                    setState(() {
+                      expandedSections[section] = !isExpanded;
+                    });
+                  },
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        isExpanded ? 'Show Less' : 'See All',
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.primary,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      Icon(
+                        isExpanded ? Icons.expand_less : Icons.expand_more,
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
+                    ],
+                  ),
+                ),
+            ],
           ),
         ),
         SizedBox(
@@ -138,9 +179,9 @@ class _HomeScreenState extends State<HomeScreen> with AutomaticKeepAliveClientMi
           child: ListView.builder(
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.symmetric(horizontal: 16),
-            itemCount: movies.length,
+            itemCount: displayMovies.length,
             itemBuilder: (context, index) {
-              final movie = movies[index];
+              final movie = displayMovies[index];
               final posterUrl = 'https://image.tmdb.org/t/p/w500${movie['poster_path']}';
               return GestureDetector(
                 onTap: () {
