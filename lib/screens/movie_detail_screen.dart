@@ -180,7 +180,9 @@ class _MovieDetailsScreenState extends State<MovieDetailsScreen> {
   }
 
   Widget _buildInfoSection() {
-    return Row(
+    return Wrap(
+      spacing: 12,
+      runSpacing: 8,
       children: [
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
@@ -189,6 +191,7 @@ class _MovieDetailsScreenState extends State<MovieDetailsScreen> {
             borderRadius: BorderRadius.circular(20),
           ),
           child: Row(
+            mainAxisSize: MainAxisSize.min,
             children: [
               const Icon(Icons.calendar_today, size: 16),
               const SizedBox(width: 4),
@@ -199,8 +202,26 @@ class _MovieDetailsScreenState extends State<MovieDetailsScreen> {
             ],
           ),
         ),
-        if (certification != null && certification!.isNotEmpty) ...[
-          const SizedBox(width: 16),
+        if (movieData!['runtime'] != null && movieData!['runtime'] > 0)
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.tertiaryContainer,
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.access_time, size: 16),
+                const SizedBox(width: 4),
+                Text(
+                  '${movieData!['runtime']} min',
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.bold),
+                ),
+              ],
+            ),
+          ),
+        if (certification != null && certification!.isNotEmpty)
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
@@ -212,7 +233,6 @@ class _MovieDetailsScreenState extends State<MovieDetailsScreen> {
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.bold),
             ),
           ),
-        ],
       ],
     );
   }
