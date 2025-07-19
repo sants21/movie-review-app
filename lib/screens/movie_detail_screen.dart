@@ -393,6 +393,8 @@ class _MovieDetailsScreenState extends State<MovieDetailsScreen> {
                   if (cast != null && cast!.isNotEmpty) _buildCastSection(),
                   const SizedBox(height: 24),
                   if (similar != null && similar!.isNotEmpty) _buildSimilarMoviesSection(),
+                  const SizedBox(height: 24),
+                  _buildReviewsSection(),
                 ],
               ),
             ),
@@ -616,5 +618,424 @@ class _MovieDetailsScreenState extends State<MovieDetailsScreen> {
         ),
       ],
     );
+  }
+
+  Widget _buildReviewsSection() {
+    final user = FirebaseAuth.instance.currentUser;
+    
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              'Reviews',
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+            ),
+            if (user != null)
+              ElevatedButton.icon(
+                onPressed: () => _showWriteReviewDialog(),
+                icon: const Icon(Icons.rate_review, size: 16),
+                label: const Text('Write Review'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Theme.of(context).colorScheme.primary,
+                  foregroundColor: Theme.of(context).colorScheme.onPrimary,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                ),
+              )
+            else
+              TextButton.icon(
+                onPressed: () => _showLoginPrompt('write reviews'),
+                icon: const Icon(Icons.rate_review, size: 16),
+                label: const Text('Write Review'),
+              ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        StreamBuilder<QuerySnapshot>(
+          stream: FirebaseFirestore.instance
+              .collection('reviews')
+              .where('movieId', isEqualTo: widget.movieId)
+              .orderBy('createdAt', descending: true)
+              .limit(10)
+              .snapshots(),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(child: CircularProgressIndicator());
+            }
+
+            if (snapshot.hasError) {
+              return Center(
+                child: Text(
+                  'Error loading reviews',
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: Theme.of(context).colorScheme.error,
+                  ),
+                ),
+              );
+            }
+
+            final reviews = snapshot.data?.docs ?? [];
+
+            if (reviews.isEmpty) {
+              return Container(
+                padding: const EdgeInsets.all(24),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.3),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Column(
+                  children: [
+                    Icon(
+                      Icons.rate_review_outlined,
+                      size: 48,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      'No reviews yet',
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Be the first to share your thoughts!',
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                ),
+              );
+            }
+
+            return Column(
+              children: reviews.map((reviewDoc) {
+                final reviewData = reviewDoc.data() as Map<String, dynamic>;
+                return _buildReviewCard(reviewData, reviewDoc.id);
+              }).toList(),
+            );
+          },
+        ),
+      ],
+    );
+  }
+
+  Widget _buildReviewCard(Map<String, dynamic> reviewData, String reviewId) {
+    final user = FirebaseAuth.instance.currentUser;
+    final isMyReview = user?.uid == reviewData['userId'];
+    final rating = reviewData['rating'] as num? ?? 0;
+    final createdAt = reviewData['createdAt'] as Timestamp?;
+    
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.2),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              CircleAvatar(
+                radius: 16,
+                backgroundColor: Theme.of(context).colorScheme.primary,
+                child: Text(
+                  _getFirstLetter(reviewData['userName'] as String? ?? 'U'),
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onPrimary,
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      reviewData['userName'] ?? 'Anonymous',
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    if (createdAt != null)
+                      Text(
+                        _formatDate(createdAt.toDate()),
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              Row(
+                children: List.generate(5, (index) {
+                  return Icon(
+                    index < rating ? Icons.star : Icons.star_border,
+                    size: 16,
+                    color: Colors.amber,
+                  );
+                }),
+              ),
+              if (isMyReview) ...[
+                const SizedBox(width: 8),
+                PopupMenuButton<String>(
+                  icon: const Icon(Icons.more_vert, size: 16),
+                  onSelected: (value) {
+                    if (value == 'edit') {
+                      _showEditReviewDialog(reviewData, reviewId);
+                    } else if (value == 'delete') {
+                      _deleteReview(reviewId);
+                    }
+                  },
+                  itemBuilder: (context) => [
+                    const PopupMenuItem(
+                      value: 'edit',
+                      child: Text('Edit'),
+                    ),
+                    const PopupMenuItem(
+                      value: 'delete',
+                      child: Text('Delete'),
+                    ),
+                  ],
+                ),
+              ],
+            ],
+          ),
+          const SizedBox(height: 12),
+          Text(
+            reviewData['reviewText'] ?? '',
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(height: 1.5),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _getFirstLetter(String name) {
+    if (name.isEmpty) return 'U';
+    return name.substring(0, 1).toUpperCase();
+  }
+
+  String _formatDate(DateTime date) {
+    final now = DateTime.now();
+    final difference = now.difference(date);
+    
+    if (difference.inDays > 7) {
+      return '${date.day}/${date.month}/${date.year}';
+    } else if (difference.inDays > 0) {
+      return '${difference.inDays} day${difference.inDays > 1 ? 's' : ''} ago';
+    } else if (difference.inHours > 0) {
+      return '${difference.inHours} hour${difference.inHours > 1 ? 's' : ''} ago';
+    } else if (difference.inMinutes > 0) {
+      return '${difference.inMinutes} minute${difference.inMinutes > 1 ? 's' : ''} ago';
+    } else {
+      return 'Just now';
+    }
+  }
+
+  void _showWriteReviewDialog() {
+    _showReviewDialog();
+  }
+
+  void _showEditReviewDialog(Map<String, dynamic> reviewData, String reviewId) {
+    _showReviewDialog(
+      existingReview: reviewData,
+      reviewId: reviewId,
+    );
+  }
+
+  void _showReviewDialog({Map<String, dynamic>? existingReview, String? reviewId}) {
+    final reviewController = TextEditingController(text: existingReview?['reviewText'] ?? '');
+    int selectedRating = existingReview?['rating']?.toInt() ?? 5;
+    
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              title: Text(existingReview != null ? 'Edit Review' : 'Write Review'),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      'Rate this movie:',
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: List.generate(5, (index) {
+                        return GestureDetector(
+                          onTap: () => setState(() => selectedRating = index + 1),
+                          child: Icon(
+                            index < selectedRating ? Icons.star : Icons.star_border,
+                            size: 32,
+                            color: Colors.amber,
+                          ),
+                        );
+                      }),
+                    ),
+                    const SizedBox(height: 16),
+                    TextField(
+                      controller: reviewController,
+                      maxLines: 4,
+                      decoration: InputDecoration(
+                        hintText: 'Share your thoughts about this movie...',
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: const Text('Cancel'),
+                ),
+                ElevatedButton(
+                  onPressed: () async {
+                    final reviewText = reviewController.text.trim();
+                    if (reviewText.isEmpty) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Please write a review')),
+                      );
+                      return;
+                    }
+                    
+                    Navigator.of(context).pop();
+                    
+                    if (existingReview != null && reviewId != null) {
+                      await _updateReview(reviewId, reviewText, selectedRating);
+                    } else {
+                      await _submitReview(reviewText, selectedRating);
+                    }
+                  },
+                  child: Text(existingReview != null ? 'Update' : 'Submit'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Future<void> _submitReview(String reviewText, int rating) async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+
+    try {
+      await FirebaseFirestore.instance.collection('reviews').add({
+        'movieId': widget.movieId,
+        'userId': user.uid,
+        'userName': user.displayName ?? user.email ?? 'Anonymous',
+        'reviewText': reviewText,
+        'rating': rating,
+        'createdAt': FieldValue.serverTimestamp(),
+        'movieTitle': movieData?['title'] ?? '',
+        'posterUrl': widget.posterUrl,
+      });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Review submitted successfully!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error submitting review: $e')),
+        );
+      }
+    }
+  }
+
+  Future<void> _updateReview(String reviewId, String reviewText, int rating) async {
+    try {
+      await FirebaseFirestore.instance.collection('reviews').doc(reviewId).update({
+        'reviewText': reviewText,
+        'rating': rating,
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Review updated successfully!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error updating review: $e')),
+        );
+      }
+    }
+  }
+
+  Future<void> _deleteReview(String reviewId) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete Review'),
+        content: const Text('Are you sure you want to delete your review?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      try {
+        await FirebaseFirestore.instance.collection('reviews').doc(reviewId).delete();
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Review deleted successfully'),
+              backgroundColor: Colors.orange,
+            ),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Error deleting review: $e')),
+          );
+        }
+      }
+    }
   }
 }
