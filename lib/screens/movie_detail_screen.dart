@@ -108,22 +108,31 @@ class _MovieDetailsScreenState extends State<MovieDetailsScreen> {
                 final collapsed = constraints.maxHeight <= kToolbarHeight + MediaQuery.of(context).padding.top + 20;
                 return FlexibleSpaceBar(
                   title: collapsed
-                      ? Text(
-                    movieData?['title'] ?? '',
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
-                    textAlign: TextAlign.center,
-                  )
+                      ? Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          constraints: const BoxConstraints(maxWidth: 200),
+                          child: Text(
+                            movieData?['title'] ?? '',
+                            style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                            textAlign: TextAlign.center,
+                            overflow: TextOverflow.ellipsis,
+                            maxLines: 1,
+                          ),
+                        )
                       : null,
                   centerTitle: true,
                   background: Stack(
                     fit: StackFit.expand,
                     children: [
-                      Image.network(
-                        widget.posterUrl,
-                        fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => Container(
-                          color: Colors.grey,
-                          child: const Icon(Icons.movie, size: 100),
+                      Hero(
+                        tag: widget.heroTag,
+                        child: Image.network(
+                          widget.posterUrl,
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) => Container(
+                            color: Colors.grey,
+                            child: const Icon(Icons.movie, size: 100),
+                          ),
                         ),
                       ),
                       Container(
@@ -165,6 +174,8 @@ class _MovieDetailsScreenState extends State<MovieDetailsScreen> {
                 children: [
                   _buildInfoSection(),
                   const SizedBox(height: 24),
+                  if (movieData!['genres'] != null && movieData!['genres'].isNotEmpty) _buildGenresSection(),
+                  if (movieData!['genres'] != null && movieData!['genres'].isNotEmpty) const SizedBox(height: 24),
                   _buildOverviewSection(),
                   const SizedBox(height: 24),
                   if (cast != null && cast!.isNotEmpty) _buildCastSection(),
@@ -365,6 +376,31 @@ class _MovieDetailsScreenState extends State<MovieDetailsScreen> {
               );
             },
           ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildGenresSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Genres', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+        const SizedBox(height: 12),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: movieData!['genres'].map<Widget>((genre) {
+            return Chip(
+              label: Text(
+                genre['name'],
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w500),
+              ),
+              backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            );
+          }).toList(),
         ),
       ],
     );

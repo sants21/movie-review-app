@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:movie_review_app/screens/genres_screens.dart';
 import 'home_screen.dart';
 import 'search_screen.dart';
 import 'me_screen.dart';
@@ -15,7 +16,8 @@ class _MainScreenState extends State<MainScreen> {
 
   final List<Widget> _pages = [
     const HomeScreen(key: PageStorageKey('home')),
-    const SearchScreen(key: PageStorageKey('search')),
+    const GenresPage(key: PageStorageKey('genres')),
+    const MovieSearchPage(key: PageStorageKey('search')),
     const MeScreen(key: PageStorageKey('me')),
   ];
 
@@ -34,7 +36,7 @@ class _MainScreenState extends State<MainScreen> {
         decoration: BoxDecoration(
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.1),
+              color: Colors.black.withValues(alpha: 0.1),
               blurRadius: 10,
               offset: const Offset(0, -2),
             ),
@@ -47,6 +49,10 @@ class _MainScreenState extends State<MainScreen> {
             BottomNavigationBarItem(
               icon: Icon(Icons.home_rounded),
               label: 'Home',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.category_rounded),
+              label: 'Genres',
             ),
             BottomNavigationBarItem(
               icon: Icon(Icons.search_rounded),

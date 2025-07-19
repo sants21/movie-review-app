@@ -71,6 +71,39 @@ class MovieService {
     return null;
   }
 
+  Future<List<dynamic>> searchMovies(String query) async {
+    final url = '$_baseUrl/search/movie?api_key=$_apiKey&query=${Uri.encodeComponent(query)}';
+    return _fetchMovies(url);
+  }
+
+  Future<List<dynamic>> fetchGenres() async {
+    final url = '$_baseUrl/genre/movie/list?api_key=$_apiKey';
+    final response = await http.get(Uri.parse(url));
+
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      return data['genres'] as List<dynamic>;
+    } else {
+      throw Exception('Failed to load genres');
+    }
+  }
+
+  Future<List<dynamic>> fetchMoviesByGenre(int genreId) async {
+    final url = Uri.parse(
+      '$_baseUrl/discover/movie?api_key=$_apiKey&with_genres=$genreId',
+    );
+
+    final response = await http.get(url);
+
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      return data['results'] as List<dynamic>;
+    } else {
+      throw Exception('Failed to load movies by genre');
+    }
+  }
+
+
   Future<List<dynamic>> fetchSimilarMovies(int movieId) async {
     final url = '$_baseUrl/movie/$movieId/similar?api_key=$_apiKey';
     final response = await http.get(Uri.parse(url));
