@@ -1,15 +1,22 @@
 import 'package:MovieHub/screens/main_screen.dart';
 import 'package:MovieHub/screens/onboarding/onboarding_screen.dart';
+import 'package:MovieHub/providers/theme_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:provider/provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   final prefs = await SharedPreferences.getInstance();
   final bool shallShowHomeScreen = prefs.getBool('onboarding_completed') ?? false;
   await Firebase.initializeApp();
-  runApp(MyApp(onboarding_completed: shallShowHomeScreen,));
+  runApp(
+    ChangeNotifierProvider(
+      create: (context) => ThemeProvider(),
+      child: MyApp(onboarding_completed: shallShowHomeScreen),
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {
@@ -19,34 +26,17 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Movie Review App',
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        useMaterial3: true,
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF6366F1),
-          brightness: Brightness.dark,
-        ),
-        cardTheme: CardThemeData(
-          elevation: 4,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-        ),
-        appBarTheme: const AppBarTheme(
-          centerTitle: true,
-          elevation: 0,
-          backgroundColor: Colors.transparent,
-        ),
-        bottomNavigationBarTheme: BottomNavigationBarThemeData(
-          selectedItemColor: const Color(0xFF6366F1),
-          unselectedItemColor: Colors.grey[600],
-          type: BottomNavigationBarType.fixed,
-          elevation: 8,
-        ),
-      ),
-      home: onboarding_completed ? const AuthGate() : const OnboardingScreen(),
+    return Consumer<ThemeProvider>(
+      builder: (context, themeProvider, child) {
+        return MaterialApp(
+          title: 'Movie Review App',
+          debugShowCheckedModeBanner: false,
+          themeMode: themeProvider.themeMode,
+          theme: ThemeProvider.lightTheme,
+          darkTheme: ThemeProvider.darkTheme,
+          home: onboarding_completed ? const AuthGate() : const OnboardingScreen(),
+        );
+      },
     );
   }
 }

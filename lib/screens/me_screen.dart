@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:provider/provider.dart';
+import '../providers/theme_provider.dart';
 import 'movie_detail_screen.dart';
 import 'auth/login_screen.dart';
 
@@ -80,6 +82,8 @@ class _MeScreenState extends State<MeScreen> {
                   _buildUserProfile(),
                   const SizedBox(height: 32),
                   _buildStatsSection(),
+                  const SizedBox(height: 32),
+                  _buildSettingsSection(),
                   const SizedBox(height: 32),
                 ],
               ),
@@ -1193,5 +1197,75 @@ class _MeScreenState extends State<MeScreen> {
     } else {
       return 'Just now';
     }
+  }
+
+  Widget _buildSettingsSection() {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.2),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                Icons.settings,
+                color: Theme.of(context).colorScheme.primary,
+              ),
+              const SizedBox(width: 12),
+              Text(
+                'Settings',
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Consumer<ThemeProvider>(
+            builder: (context, themeProvider, child) {
+              return Container(
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.3),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: ListTile(
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  leading: Icon(
+                    themeProvider.isDarkMode ? Icons.dark_mode : Icons.light_mode,
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
+                  title: Text(
+                    'Theme',
+                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  subtitle: Text(
+                    themeProvider.isDarkMode ? 'Dark Mode' : 'Light Mode',
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                  trailing: Switch.adaptive(
+                    value: themeProvider.isDarkMode,
+                    onChanged: (value) {
+                      themeProvider.toggleTheme();
+                    },
+                    activeColor: Theme.of(context).colorScheme.primary,
+                  ),
+                ),
+              );
+            },
+          ),
+        ],
+      ),
+    );
   }
 }
